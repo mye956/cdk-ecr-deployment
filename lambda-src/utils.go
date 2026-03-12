@@ -30,6 +30,7 @@ const (
 	DEST_CREDS         string = "DestCreds"
 	COPY_IMAGE_INDEX   string = "CopyImageIndex"
 	ARCH_IMAGE_TAGS    string = "ArchImageTags"
+	MAX_RETRIES        string = "MaxRetries"
 	ECRRateExceedError string = "toomanyrequests: Rate exceeded"
 )
 

@@ -77,6 +77,10 @@ func handler(ctx context.Context, event cfn.Event) (physicalResourceID string, d
 		if err != nil {
 			return physicalResourceID, data, err
 		}
+		maxRetries, err := getIntPropsDefault(event.ResourceProperties, MAX_RETRIES, 0)
+		if err != nil {
+			return physicalResourceID, data, err
+		}
 
 		srcCreds, err = parseCreds(srcCreds)
 		if err != nil {
@@ -87,17 +91,17 @@ func handler(ctx context.Context, event cfn.Event) (physicalResourceID string, d
 			return physicalResourceID, data, err
 		}
 
-		log.Printf("SrcImage: %v DestImage: %v ImageArch: %v CopyImageIndex: %v", srcImage, destImage, imageArch, copyImageIndex)
+		log.Printf("SrcImage: %v DestImage: %v ImageArch: %v CopyImageIndex: %v MaxRetries: %v", srcImage, destImage, imageArch, copyImageIndex, maxRetries)
 
 		// Main copy operation
-		err = copyImage(srcImage, destImage, srcCreds, destCreds, imageArch, copyImageIndex)
+		err = copyImage(srcImage, destImage, srcCreds, destCreds, imageArch, copyImageIndex, maxRetries)
 		if err != nil {
 			return physicalResourceID, data, err
 		}
 
 		// Apply architecture-specific image tags if specified
 		if archImageTags != "" {
-			err = applyArchImageTags(srcImage, destImage, srcCreds, destCreds, archImageTags)
+			err = applyArchImageTags(srcImage, destImage, srcCreds, destCreds, archImageTags, maxRetries)
 			if err != nil {
 				return physicalResourceID, data, err
 			}
@@ -155,6 +159,18 @@ func getBoolPropsDefault(m map[string]interface{}, k string, d bool) (bool, erro
 	return false, fmt.Errorf(`can't get %v as bool with value %v. valid values are "true" and "false"`, k, v)
 }
 
+func getIntPropsDefault(m map[string]interface{}, k string, d int) (int, error) {
+	v := m[k]
+	if v == nil {
+		return d, nil
+	}
+	val, ok := v.(int)
+	if ok && (val >= 0) {
+		return val, nil
+	}
+	return "", fmt.Errorf("can't get %v", k)
+}
+
 func parseCreds(creds string) (string, error) {
 	credsType := GetCredsType(creds)
 	if creds == "" {
@@ -171,7 +187,7 @@ func parseCreds(creds string) (string, error) {
 	return "", fmt.Errorf("unkown creds type")
 }
 
-func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool) error {
+func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool, maxRetries int) error {
 	log.Printf("Entered copyImage")
 	srcRef, err := alltransports.ParseImageName(srcImage)
 	if err != nil {
@@ -212,9 +228,8 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		copyOpts.ImageListSelection = copy.CopyAllImages
 	}
 
-	maxRetries := 5
 	for i := 0; i <= maxRetries; i++ {
-		log.Printf("Attempting to copy image (attempt %d/%d)...", i+1, maxRetries+1)
+		log.Printf("Attempting to copy image (attempt %d/%d)...", i+1, maxRetries)
 		_, err = copy.Image(ctx, policyContext, destRef, srcRef, copyOpts)
 		if err == nil {
 			log.Printf("Copy succeeded on attempt %d", i+1)
@@ -234,7 +249,7 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 	return fmt.Errorf("copy image failed after %d retries: %s", maxRetries+1, err.Error())
 }
 
-func applyArchImageTags(srcImage string, destImage string, srcCreds string, destCreds string, archImageTags string) error {
+func applyArchImageTags(srcImage string, destImage string, srcCreds string, destCreds string, archImageTags string, maxRetries int) error {
 	tags, err := GetImageTagsMap(archImageTags)
 	if err != nil {
 		return err
@@ -242,7 +257,7 @@ func applyArchImageTags(srcImage string, destImage string, srcCreds string, dest
 
 	for arch, tag := range tags {
 		archDestImage := GetImageDestination(destImage, tag)
-		err := copyImage(srcImage, archDestImage, srcCreds, destCreds, arch, false)
+		err := copyImage(srcImage, archDestImage, srcCreds, destCreds, arch, false, maxRetries)
 		if err != nil {
 			return err
 		}

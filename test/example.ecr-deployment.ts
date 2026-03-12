@@ -64,6 +64,7 @@ class TestECRDeployment extends Stack {
           amd64: `nginx-amd64-${i}`,
           arm64: `nginx-arm64-${i}`,
         },
+        maxRetries: 10,
       });
     }
 

@@ -85,3 +85,15 @@ func TestGetBoolPropsDefault(t *testing.T) {
 	_, err = getBoolPropsDefault(props, "intKey", false)
 	assert.Error(t, err)
 }
+
+// func TestGetIntPropsDefault(t *testing.T) {
+// 	props := map[string]interface{}{
+// 		"intKey":   123,
+// 		"stringKey": "123",
+// 		"boolKey": true,
+// 	}
+
+// 	result, err := getIntPropsDefault(props, "intKey", 0)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, result, 123)
+// }
