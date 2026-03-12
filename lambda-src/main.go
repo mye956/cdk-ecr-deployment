@@ -170,16 +170,6 @@ func parseCreds(creds string) (string, error) {
 	return "", fmt.Errorf("unkown creds type")
 }
 
-func isECRRateLimit(err error) bool {
-	if err == nil {
-		return false
-	}
-	s := strings.ToLower(err.Error())
-	return strings.Contains(s, "ratelimitexceeded") ||
-		strings.Contains(s, "toomanyrequests") ||
-		(strings.Contains(s, "rate") && strings.Contains(s, "exceed"))
-}
-
 func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool) error {
 	srcRef, err := alltransports.ParseImageName(srcImage)
 	if err != nil {
@@ -226,9 +216,8 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		if err == nil {
 			return nil
 		}
-		if isECRRateLimit(err) && i < maxRetries {
+		if IsECRRateLimit(err) && i < maxRetries {
 			backoff := time.Duration(1<<uint(i)) * time.Second
-			log.Printf("ECR rate limit hit, retrying in %v (attempt %d/%d)", backoff, i+1, maxRetries)
 			time.Sleep(backoff)
 			continue
 		}

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -17,17 +18,19 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/smithy-go"
 	"github.com/containers/image/v5/types"
 )
 
 const (
-	SRC_IMAGE        string = "SrcImage"
-	DEST_IMAGE       string = "DestImage"
-	IMAGE_ARCH       string = "ImageArch"
-	SRC_CREDS        string = "SrcCreds"
-	DEST_CREDS       string = "DestCreds"
-	COPY_IMAGE_INDEX string = "CopyImageIndex"
-	ARCH_IMAGE_TAGS  string = "ArchImageTags"
+	SRC_IMAGE          string = "SrcImage"
+	DEST_IMAGE         string = "DestImage"
+	IMAGE_ARCH         string = "ImageArch"
+	SRC_CREDS          string = "SrcCreds"
+	DEST_CREDS         string = "DestCreds"
+	COPY_IMAGE_INDEX   string = "CopyImageIndex"
+	ARCH_IMAGE_TAGS    string = "ArchImageTags"
+	ECRRateExceedError string = "toomanyrequests: Rate exceeded"
 )
 
 type ECRAuth struct {
@@ -230,4 +233,20 @@ func GetImageDestination(dest string, imageTag string) string {
 		repo = strings.Split(destName, ":")[0]
 	}
 	return fmt.Sprintf("docker://%s:%s", repo, imageTag)
+}
+
+func IsECRRateLimit(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) {
+		return strings.Contains(apiErr.ErrorMessage(), ECRRateExceedError)
+	}
+
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "ratelimitexceeded") ||
+		strings.Contains(s, "toomanyrequests") ||
+		(strings.Contains(s, "rate") && strings.Contains(s, "exceed"))
 }

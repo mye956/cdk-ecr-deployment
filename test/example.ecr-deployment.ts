@@ -54,6 +54,14 @@ class TestECRDeployment extends Stack {
       },
     });
 
+    // Concurrent deployments to stress-test ECR rate limit retry logic
+    for (let i = 0; i < 20; i++) {
+      new ecrDeploy.ECRDeployment(this, `DeployRetryTest${i}`, {
+        src: new ecrDeploy.DockerImageName(image.imageUri),
+        dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:retry-test-${i}`),
+      });
+    }
+
     // Your can also copy a docker archive image tarball from s3
     // new ecrDeploy.ECRDeployment(this, 'DeployDockerImage', {
     //   src: new ecrDeploy.S3ArchiveName('bucket-name/nginx.tar', 'nginx:latest'),
