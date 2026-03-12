@@ -57,8 +57,13 @@ class TestECRDeployment extends Stack {
     // Concurrent deployments to stress-test ECR rate limit retry logic
     for (let i = 0; i < 20; i++) {
       new ecrDeploy.ECRDeployment(this, `DeployRetryTest${i}`, {
-        src: new ecrDeploy.DockerImageName(image.imageUri),
-        dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:retry-test-${i}`),
+        src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
+        dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-retry-test-${i}`),
+        copyImageIndex: true,
+        archImageTags: {
+          amd64: `nginx-amd64-${i}`,
+          arm64: `nginx-arm64-${i}`,
+        },
       });
     }
 

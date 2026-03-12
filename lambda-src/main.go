@@ -43,6 +43,8 @@ func handler(ctx context.Context, event cfn.Event) (physicalResourceID string, d
 
 	log.Printf("Event: %s", Dumps(event))
 
+	log.Printf("This is a test log")
+
 	if event.RequestType == cfn.RequestDelete {
 		return physicalResourceID, data, nil
 	}
@@ -170,6 +172,7 @@ func parseCreds(creds string) (string, error) {
 }
 
 func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool) error {
+	log.Printf("Attempting to copy image to repository...")
 	srcRef, err := alltransports.ParseImageName(srcImage)
 	if err != nil {
 		return err
