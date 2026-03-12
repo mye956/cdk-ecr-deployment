@@ -258,16 +258,8 @@ func IsECRRateLimit(err error) bool {
 		strings.Contains(s, "throttl")
 }
 
-func backoffWithJitter(attempt int, baseDelay time.Duration, maxDelay time.Duration) time.Duration {
-	exp := math.Pow(2, float64(attempt))
-	delay := time.Duration(float64(baseDelay) * exp)
-	if delay > maxDelay {
-		delay = maxDelay
-	}
-	jitter := rand.Int63n(int64(delay))
-	return time.Duration(jitter * int64(time.Second))
-
-	// delay := math.Min(float64(maxDelay), float64(baseDelay)*math.Pow(2, float64(attempt)))
-	// jitter := rand.Float64() * delay
-	// return time.Duration(jitter * float64(time.Second))
+func backoffWithJitter(attempt int, baseSeconds float64, capSeconds float64) time.Duration {
+	delay := math.Min(capSeconds, baseSeconds*math.Pow(2, float64(attempt)))
+	jitter := rand.Float64() * delay
+	return time.Duration(jitter * float64(time.Second))
 }

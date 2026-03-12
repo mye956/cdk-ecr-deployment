@@ -240,8 +240,8 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		copyOpts.ImageListSelection = copy.CopyAllImages
 	}
 
-	baseDelay := 1 * time.Second
-	maxDelay := 30 * time.Second
+	baseDelay := 1.0 // seconds
+	maxDelay := 30.0 // seconds
 
 	for i := 0; i <= maxRetries; i++ {
 		log.Printf("Attempting to copy image (attempt %d/%d)...", i+1, maxRetries)
