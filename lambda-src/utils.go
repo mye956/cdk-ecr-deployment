@@ -252,6 +252,10 @@ func GetRetryConfig(retryData string) (*RetryConfig, error) {
 		MaxDelay:    10.0,
 	}
 
+	if retryData == "" {
+		return &config, nil
+	}
+
 	if err := json.Unmarshal([]byte(retryData), &config); err != nil {
 		return nil, fmt.Errorf("unable to parse retry configuration from data: %v with error: %v", retryData, err)
 	}
