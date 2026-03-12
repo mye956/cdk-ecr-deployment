@@ -252,7 +252,7 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		log.Printf("Is the error retriable? %t", retriableErr)
 		if retriableErr && i < maxRetries {
 			backoff := time.Duration(1<<uint(i)) * 2 * time.Second
-			log.Printf("Rate limit hit, retrying in %v...", backoff)
+			log.Printf("Rate limit hit for image: %v with arch: %v, retrying in %v...", destImage, imageArch, backoff)
 			time.Sleep(backoff)
 			continue
 		}
