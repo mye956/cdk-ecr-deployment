@@ -213,9 +213,11 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 	for i := 0; i <= maxRetries; i++ {
 		_, err = copy.Image(ctx, policyContext, destRef, srcRef, copyOpts)
 		if err == nil {
+			log.Printf("Copying succeeded after %v attempts", i)
 			return nil
 		}
 		if IsECRRateLimit(err) && i < maxRetries {
+			log.Printf("Rate limit hit after attempt %v. Will retry...", i)
 			backoff := time.Duration(1<<uint(i)) * time.Second
 			time.Sleep(backoff)
 			continue
