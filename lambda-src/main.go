@@ -77,7 +77,11 @@ func handler(ctx context.Context, event cfn.Event) (physicalResourceID string, d
 		if err != nil {
 			return physicalResourceID, data, err
 		}
-		maxRetries, err := getIntPropsDefault(event.ResourceProperties, MAX_RETRIES, 0)
+		retryConfigsData, err := getStrPropsDefault(event.ResourceProperties, RETRY_CONFIGS, "")
+		if err != nil {
+			return physicalResourceID, data, err
+		}
+		retryConfigs, err := GetRetryConfig(retryConfigsData)
 		if err != nil {
 			return physicalResourceID, data, err
 		}
@@ -91,17 +95,17 @@ func handler(ctx context.Context, event cfn.Event) (physicalResourceID string, d
 			return physicalResourceID, data, err
 		}
 
-		log.Printf("SrcImage: %v DestImage: %v ImageArch: %v CopyImageIndex: %v MaxRetries: %v", srcImage, destImage, imageArch, copyImageIndex, maxRetries)
+		log.Printf("SrcImage: %v DestImage: %v ImageArch: %v CopyImageIndex: %v RetryConfig: %v", srcImage, destImage, imageArch, copyImageIndex, retryConfigsData)
 
 		// Main copy operation
-		err = copyImage(srcImage, destImage, srcCreds, destCreds, imageArch, copyImageIndex, maxRetries)
+		err = copyImage(srcImage, destImage, srcCreds, destCreds, imageArch, copyImageIndex, retryConfigs)
 		if err != nil {
 			return physicalResourceID, data, err
 		}
 
 		// Apply architecture-specific image tags if specified
 		if archImageTags != "" {
-			err = applyArchImageTags(srcImage, destImage, srcCreds, destCreds, archImageTags, maxRetries)
+			err = applyArchImageTags(srcImage, destImage, srcCreds, destCreds, archImageTags, retryConfigs)
 			if err != nil {
 				return physicalResourceID, data, err
 			}
@@ -199,7 +203,7 @@ func parseCreds(creds string) (string, error) {
 	return "", fmt.Errorf("unkown creds type")
 }
 
-func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool, maxRetries int) error {
+func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool, retryConfigs *RetryConfig) error {
 	log.Printf("Entered copyImage")
 	srcRef, err := alltransports.ParseImageName(srcImage)
 	if err != nil {
@@ -240,11 +244,8 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		copyOpts.ImageListSelection = copy.CopyAllImages
 	}
 
-	baseDelay := 1.0 // seconds
-	maxDelay := 30.0 // seconds
-
-	for i := 0; i <= maxRetries; i++ {
-		log.Printf("Attempting to copy image (attempt %d/%d)...", i+1, maxRetries)
+	for i := 0; i < retryConfigs.NumAttempts; i++ {
+		log.Printf("Attempting to copy from source image: %v to destination image: %v with arch %v. (attempt %d/%d)...", srcImage, destImage, imageArch, i+1, retryConfigs.NumAttempts)
 		_, err = copy.Image(ctx, policyContext, destRef, srcRef, copyOpts)
 		if err == nil {
 			log.Printf("Copy succeeded on attempt %d", i+1)
@@ -253,8 +254,8 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		log.Printf("Copy attempt %d failed: %s", i+1, err.Error())
 		retriableErr := IsECRRateLimit(err)
 		log.Printf("Is the error retriable? %t", retriableErr)
-		if retriableErr && i < maxRetries {
-			wait := backoffWithJitter(i, baseDelay, maxDelay)
+		if retriableErr && i < (retryConfigs.NumAttempts-1) {
+			wait := backoffWithJitter(i, retryConfigs.BaseDelay, retryConfigs.MaxDelay)
 			// backoff := time.Duration(1<<uint(i)) * 2 * time.Second
 			log.Printf("Rate limit hit for image: %v with arch: %v, retrying in %v...", destImage, imageArch, wait)
 			time.Sleep(wait)
@@ -262,10 +263,10 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		}
 		return fmt.Errorf("copy image failed: %s", err.Error())
 	}
-	return fmt.Errorf("copy image failed after %d retries: %s", maxRetries+1, err.Error())
+	return fmt.Errorf("copy image failed after %d retries: %s", retryConfigs.NumAttempts+1, err.Error())
 }
 
-func applyArchImageTags(srcImage string, destImage string, srcCreds string, destCreds string, archImageTags string, maxRetries int) error {
+func applyArchImageTags(srcImage string, destImage string, srcCreds string, destCreds string, archImageTags string, retryConfigs *RetryConfig) error {
 	tags, err := GetImageTagsMap(archImageTags)
 	if err != nil {
 		return err
@@ -273,7 +274,7 @@ func applyArchImageTags(srcImage string, destImage string, srcCreds string, dest
 
 	for arch, tag := range tags {
 		archDestImage := GetImageDestination(destImage, tag)
-		err := copyImage(srcImage, archDestImage, srcCreds, destCreds, arch, false, maxRetries)
+		err := copyImage(srcImage, archDestImage, srcCreds, destCreds, arch, false, retryConfigs)
 		if err != nil {
 			return err
 		}

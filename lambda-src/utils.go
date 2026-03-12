@@ -32,7 +32,7 @@ const (
 	DEST_CREDS         string = "DestCreds"
 	COPY_IMAGE_INDEX   string = "CopyImageIndex"
 	ARCH_IMAGE_TAGS    string = "ArchImageTags"
-	MAX_RETRIES        string = "MaxRetries"
+	RETRY_CONFIGS      string = "RetryConfigs"
 	ECRRateExceedError string = "toomanyrequests: Rate exceeded"
 )
 
@@ -42,6 +42,12 @@ type ECRAuth struct {
 	Pass          string
 	ProxyEndpoint string
 	ExpiresAt     time.Time
+}
+
+type RetryConfig struct {
+	NumAttempts int     `json:"numAttempts,omitempty"`
+	BaseDelay   float64 `json:"baseDelay,omitempty"`
+	MaxDelay    float64 `json:"maxDelay,omitempty"`
 }
 
 func GetECRRegion(uri string) string {
@@ -238,6 +244,20 @@ func GetImageDestination(dest string, imageTag string) string {
 	return fmt.Sprintf("docker://%s:%s", repo, imageTag)
 }
 
+func GetRetryConfig(retryData string) (*RetryConfig, error) {
+	// Initializing a new retry configuration with default values
+	config := RetryConfig{
+		numAttempts: 1,
+		baseDelay:   1.0,
+		maxDelay:    10.0,
+	}
+
+	if err := json.Unmarshal([]byte(retryData), &config); err != nil {
+		return nil, fmt.Errorf("unable to parse retry configuration from data: %v with error: %v", retryData, err)
+	}
+	return &config, nil
+}
+
 func IsECRRateLimit(err error) bool {
 	if err == nil {
 		return false
@@ -246,16 +266,39 @@ func IsECRRateLimit(err error) bool {
 	var apiErr smithy.APIError
 	if errors.As(err, &apiErr) {
 		if strings.Contains(apiErr.ErrorMessage(), ECRRateExceedError) {
+			log.Printf("Was a smithy API error")
 			return true
 		}
 	}
 
 	s := strings.ToLower(err.Error())
-	return strings.Contains(s, "toomanyrequests") ||
-		strings.Contains(s, "ratelimitexceeded") ||
-		strings.Contains(s, "rate exceeded") ||
-		(strings.Contains(s, "rate") && strings.Contains(s, "exceed")) ||
-		strings.Contains(s, "throttl")
+	log.Printf("Potential rate limit error: %v", s)
+	if strings.Contains(s, "rate") && strings.Contains(s, "exceed") {
+		log.Printf("match 1")
+		return true
+	}
+
+	if strings.Contains(s, "toomanyrequests") {
+		log.Printf("match 2")
+		return true
+	}
+
+	if strings.Contains(s, "ratelimitexceeded") {
+		log.Printf("match 3")
+		return true
+	}
+
+	if strings.Contains(s, "rate exceeded") {
+		log.Printf("match 4")
+		return true
+	}
+
+	if strings.Contains(s, "throttl") {
+		log.Printf("match 5")
+		return true
+	}
+
+	return false
 }
 
 func backoffWithJitter(attempt int, baseSeconds float64, capSeconds float64) time.Duration {

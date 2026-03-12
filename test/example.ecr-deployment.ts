@@ -64,7 +64,11 @@ class TestECRDeployment extends Stack {
           amd64: `busybox-amd64-${i}`,
           arm64: `busybox-arm64-${i}`,
         },
-        maxRetries: 10,
+        retryConfigs: {
+          numAttempts: 5,
+          baseDelay: 1,
+          maxDelay: 30
+        }
       });
     }
 

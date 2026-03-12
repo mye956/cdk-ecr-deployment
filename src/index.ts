@@ -54,13 +54,9 @@ export interface ECRDeploymentProps {
   readonly archImageTags?: { [architecture: string]: string };
 
   /**
-   * The maximum number of retries for rate limit errors when copying images.
-   *
-   * Uses exponential backoff between retries.
-   *
-   * @default 0
+   * Retry configurations to apply when copying images. This is useful when deploying a huge load of images
    */
-  readonly maxRetries?: number;
+  readonly retryConfigs?: { [key: string]: number };
 
   /**
    * The amount of memory (in MiB) to allocate to the AWS Lambda function which
@@ -220,9 +216,6 @@ export class ECRDeployment extends Construct {
     if (props.imageArch && props.imageArch.length !== 1) {
       throw new Error(`imageArch must contain exactly 1 element, got ${JSON.stringify(props.imageArch)}`);
     }
-    if (props.maxRetries && props.maxRetries < 0) {
-      throw new Error(`maxRetries cannot have value less than 0`)
-    }
     const imageArch = props.imageArch ? props.imageArch[0] : '';
 
     new CustomResource(this, 'CustomResource', {
@@ -237,7 +230,7 @@ export class ECRDeployment extends Construct {
         ...imageArch ? { ImageArch: imageArch } : {},
         ...props.copyImageIndex ? { CopyImageIndex: props.copyImageIndex } : {},
         ...props.archImageTags ? { ArchImageTags: JSON.stringify(props.archImageTags) } : {},
-        ...props.maxRetries ? { MaxRetries: props.maxRetries } : {},
+        ...props.retryConfigs ? { RetryConfigs: JSON.stringify(props.retryConfigs) } : {},
       },
     });
   }
