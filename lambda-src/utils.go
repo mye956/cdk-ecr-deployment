@@ -247,9 +247,9 @@ func GetImageDestination(dest string, imageTag string) string {
 func GetRetryConfig(retryData string) (*RetryConfig, error) {
 	// Initializing a new retry configuration with default values
 	config := RetryConfig{
-		numAttempts: 1,
-		baseDelay:   1.0,
-		maxDelay:    10.0,
+		NumAttempts: 1,
+		BaseDelay:   1.0,
+		MaxDelay:    10.0,
 	}
 
 	if err := json.Unmarshal([]byte(retryData), &config); err != nil {
