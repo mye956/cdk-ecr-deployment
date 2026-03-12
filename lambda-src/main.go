@@ -168,7 +168,7 @@ func getIntPropsDefault(m map[string]interface{}, k string, d int) (int, error) 
 	if ok && (val >= 0) {
 		return val, nil
 	}
-	return "", fmt.Errorf("can't get %v", k)
+	return -1, fmt.Errorf("can't get %v", k)
 }
 
 func parseCreds(creds string) (string, error) {
