@@ -61,8 +61,8 @@ class TestECRDeployment extends Stack {
         dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-retry-test-${i}`),
         copyImageIndex: true,
         archImageTags: {
-          amd64: `nginx-amd64-${i}`,
-          arm64: `nginx-arm64-${i}`,
+          amd64: `busybox-amd64-${i}`,
+          arm64: `busybox-arm64-${i}`,
         },
         maxRetries: 10,
       });
