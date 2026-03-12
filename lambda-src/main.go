@@ -240,6 +240,9 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		copyOpts.ImageListSelection = copy.CopyAllImages
 	}
 
+	baseDelay := 1 * time.Second
+	maxDelay := 30 * time.Second
+
 	for i := 0; i <= maxRetries; i++ {
 		log.Printf("Attempting to copy image (attempt %d/%d)...", i+1, maxRetries)
 		_, err = copy.Image(ctx, policyContext, destRef, srcRef, copyOpts)
@@ -251,9 +254,10 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		retriableErr := IsECRRateLimit(err)
 		log.Printf("Is the error retriable? %t", retriableErr)
 		if retriableErr && i < maxRetries {
-			backoff := time.Duration(1<<uint(i)) * 2 * time.Second
-			log.Printf("Rate limit hit for image: %v with arch: %v, retrying in %v...", destImage, imageArch, backoff)
-			time.Sleep(backoff)
+			wait := backoffWithJitter(i, baseDelay, maxDelay)
+			// backoff := time.Duration(1<<uint(i)) * 2 * time.Second
+			log.Printf("Rate limit hit for image: %v with arch: %v, retrying in %v...", destImage, imageArch, wait)
+			time.Sleep(wait)
 			continue
 		}
 		return fmt.Errorf("copy image failed: %s", err.Error())

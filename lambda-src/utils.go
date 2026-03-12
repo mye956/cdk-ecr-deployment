@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
+	"math/rand"
 	"regexp"
 	"strings"
 	"time"
@@ -254,4 +256,13 @@ func IsECRRateLimit(err error) bool {
 		strings.Contains(s, "rate exceeded") ||
 		(strings.Contains(s, "rate") && strings.Contains(s, "exceed")) ||
 		strings.Contains(s, "throttl")
+}
+
+func backoffWithJitter(attempt int, baseDelay time.Duration, maxDelay time.Duration) time.Duration {
+	exp := math.Pow(2, float64(attempt))
+	delay := time.Duration(float64(baseDelay) * exp)
+	if delay > maxDelay {
+		delay = maxDelay
+	}
+	return time.Duration(rand.Int63n(int64(delay)))
 }
