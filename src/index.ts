@@ -53,6 +53,13 @@ export interface ECRDeploymentProps {
    */
   readonly archImageTags?: { [architecture: string]: string };
 
+  /**
+   * The maximum number of retries for rate limit errors when copying images.
+   *
+   * Uses exponential backoff between retries.
+   *
+   * @default 0
+   */
   readonly maxRetries?: number;
 
   /**

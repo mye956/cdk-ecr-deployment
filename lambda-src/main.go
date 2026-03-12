@@ -164,11 +164,20 @@ func getIntPropsDefault(m map[string]interface{}, k string, d int) (int, error) 
 	if v == nil {
 		return d, nil
 	}
-	val, ok := v.(int)
-	if ok {
-		log.Printf("Parsed number %v from key %v", val, k)
-		if (val >= 0) {
-			return val, nil
+	// CloudFormation sends numbers as float64 in JSON
+	if fval, ok := v.(float64); ok {
+		ival := int(fval)
+		if ival >= 0 {
+			log.Printf("Parsed number %v from key %v", ival, k)
+			return ival, nil
+		}
+	}
+	// CloudFormation may also send numbers as strings
+	if sval, ok := v.(string); ok {
+		var ival int
+		if _, err := fmt.Sscanf(sval, "%d", &ival); err == nil && ival >= 0 {
+			log.Printf("Parsed number %v from string key %v", ival, k)
+			return ival, nil
 		}
 	}
 	return -1, fmt.Errorf("can't get %v", k)
