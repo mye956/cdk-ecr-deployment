@@ -67,8 +67,8 @@ class TestECRDeployment extends Stack {
         retryConfigs: {
           numAttempts: 5,
           baseDelay: 1,
-          maxDelay: 30
-        }
+          maxDelay: 30,
+        },
       });
     }
 
