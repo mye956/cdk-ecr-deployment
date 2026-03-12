@@ -165,8 +165,11 @@ func getIntPropsDefault(m map[string]interface{}, k string, d int) (int, error) 
 		return d, nil
 	}
 	val, ok := v.(int)
-	if ok && (val >= 0) {
-		return val, nil
+	if ok {
+		log.Printf("Parsed number %v from key %v", val, k)
+		if (val >= 0) {
+			return val, nil
+		}
 	}
 	return -1, fmt.Errorf("can't get %v", k)
 }

@@ -213,8 +213,8 @@ export class ECRDeployment extends Construct {
     if (props.imageArch && props.imageArch.length !== 1) {
       throw new Error(`imageArch must contain exactly 1 element, got ${JSON.stringify(props.imageArch)}`);
     }
-    if (props.maxRetries && props.maxRetries <= 0) {
-      throw new Error(`maxRetries cannot have value less than or equal to 0`)
+    if (props.maxRetries && props.maxRetries < 0) {
+      throw new Error(`maxRetries cannot have value less than 0`)
     }
     const imageArch = props.imageArch ? props.imageArch[0] : '';
 
