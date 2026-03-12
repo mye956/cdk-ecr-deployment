@@ -242,11 +242,15 @@ func IsECRRateLimit(err error) bool {
 
 	var apiErr smithy.APIError
 	if errors.As(err, &apiErr) {
-		return strings.Contains(apiErr.ErrorMessage(), ECRRateExceedError)
+		if strings.Contains(apiErr.ErrorMessage(), ECRRateExceedError) {
+			return true
+		}
 	}
 
 	s := strings.ToLower(err.Error())
-	return strings.Contains(s, "ratelimitexceeded") ||
-		strings.Contains(s, "toomanyrequests") ||
-		(strings.Contains(s, "rate") && strings.Contains(s, "exceed"))
+	return strings.Contains(s, "toomanyrequests") ||
+		strings.Contains(s, "ratelimitexceeded") ||
+		strings.Contains(s, "rate exceeded") ||
+		(strings.Contains(s, "rate") && strings.Contains(s, "exceed")) ||
+		strings.Contains(s, "throttl")
 }

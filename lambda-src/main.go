@@ -212,26 +212,26 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 		copyOpts.ImageListSelection = copy.CopyAllImages
 	}
 
-	maxRetries := 3
+	maxRetries := 5
 	for i := 0; i <= maxRetries; i++ {
-		log.Printf("Attempting to copy image to repository...")
+		log.Printf("Attempting to copy image (attempt %d/%d)...", i+1, maxRetries+1)
 		_, err = copy.Image(ctx, policyContext, destRef, srcRef, copyOpts)
 		if err == nil {
-			log.Printf("Copying succeeded after %v attempts", i)
+			log.Printf("Copy succeeded on attempt %d", i+1)
 			return nil
 		}
+		log.Printf("Copy attempt %d failed: %s", i+1, err.Error())
 		retriableErr := IsECRRateLimit(err)
-		log.Printf("Is the error retriable?: %t", retriableErr)
+		log.Printf("Is the error retriable? %t", retriableErr)
 		if retriableErr && i < maxRetries {
-			log.Printf("Rate limit hit after attempt %v. Will retry...", i)
-			backoff := time.Duration(1<<uint(i)) * time.Second
+			backoff := time.Duration(1<<uint(i)) * 2 * time.Second
+			log.Printf("Rate limit hit, retrying in %v...", backoff)
 			time.Sleep(backoff)
 			continue
 		}
-		log.Printf("Encountered error: %s", err.Error())
 		return fmt.Errorf("copy image failed: %s", err.Error())
 	}
-	return fmt.Errorf("copy image failed after %d retries: %s", maxRetries, err.Error())
+	return fmt.Errorf("copy image failed after %d retries: %s", maxRetries+1, err.Error())
 }
 
 func applyArchImageTags(srcImage string, destImage string, srcCreds string, destCreds string, archImageTags string) error {
