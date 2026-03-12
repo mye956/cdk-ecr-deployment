@@ -172,7 +172,7 @@ func parseCreds(creds string) (string, error) {
 }
 
 func copyImage(srcImage string, destImage string, srcCreds string, destCreds string, imageArch string, copyImageIndex bool) error {
-	log.Printf("Attempting to copy image to repository...")
+	log.Printf("Entered copyImage")
 	srcRef, err := alltransports.ParseImageName(srcImage)
 	if err != nil {
 		return err
@@ -214,17 +214,21 @@ func copyImage(srcImage string, destImage string, srcCreds string, destCreds str
 
 	maxRetries := 3
 	for i := 0; i <= maxRetries; i++ {
+		log.Printf("Attempting to copy image to repository...")
 		_, err = copy.Image(ctx, policyContext, destRef, srcRef, copyOpts)
 		if err == nil {
 			log.Printf("Copying succeeded after %v attempts", i)
 			return nil
 		}
-		if IsECRRateLimit(err) && i < maxRetries {
+		retriableErr := IsECRRateLimit(err)
+		log.Printf("Is the error retriable?: %t", retriableErr)
+		if retriableErr && i < maxRetries {
 			log.Printf("Rate limit hit after attempt %v. Will retry...", i)
 			backoff := time.Duration(1<<uint(i)) * time.Second
 			time.Sleep(backoff)
 			continue
 		}
+		log.Printf("Encountered error: %s", err.Error())
 		return fmt.Errorf("copy image failed: %s", err.Error())
 	}
 	return fmt.Errorf("copy image failed after %d retries: %s", maxRetries, err.Error())
