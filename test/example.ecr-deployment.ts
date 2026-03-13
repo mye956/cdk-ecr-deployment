@@ -89,23 +89,23 @@ class TestECRDeployment extends Stack {
     }
     
 
-    // // Concurrent deployments to stress-test ECR rate limit retry logic
-    // for (let i = 0; i < 2; i++) {
-    //   new ecrDeploy.ECRDeployment(this, `DeployRetryTest${i}`, {
-    //     src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
-    //     dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-retry-test-${i}`),
-    //     copyImageIndex: true,
-    //     archImageTags: {
-    //       amd64: `busybox-amd64-${i}`,
-    //       arm64: `busybox-arm64-${i}`,
-    //     },
-    //     retryConfigs: {
-    //       numAttempts: 5,
-    //       baseDelay: 1,
-    //       maxDelay: 30,
-    //     },
-    //   });
-    // }
+    // Concurrent deployments to stress-test ECR rate limit retry logic
+    for (let i = 0; i < 2; i++) {
+      new ecrDeploy.ECRDeployment(this, `DeployRetryTest${i}`, {
+        src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
+        dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-retry-test-${i}`),
+        copyImageIndex: true,
+        archImageTags: {
+          amd64: `busybox-amd64-${i}`,
+          arm64: `busybox-arm64-${i}`,
+        },
+        retryConfigs: {
+          numAttempts: 5,
+          baseDelay: 1,
+          maxDelay: 30,
+        },
+      });
+    }
 
     // new ecrDeploy.ECRDeployment(this, `DeployRetryTest`, {
     //   src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
