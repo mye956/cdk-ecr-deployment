@@ -71,15 +71,23 @@ class TestECRDeployment extends Stack {
     //   },
     // });
 
-    new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndexAmazonlinux', {
-      src: new ecrDeploy.DockerImageName('public.ecr.aws/amazonlinux/amazonlinux:latest'),
-      dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:amazonlinux-manifest`),
-      copyImageIndex: true,
-      archImageTags: {
-        amd64: `amazonlinux-amd64`,
-        arm64: `amazonlinux-arm64`,
-      },
-    });
+    for (let i = 0; i < 5; i++) {
+      new ecrDeploy.ECRDeployment(this, `DeployECRImageIndexAmazonlinux${i}`, {
+        src: new ecrDeploy.DockerImageName('public.ecr.aws/amazonlinux/amazonlinux:latest'),
+        dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:amazonlinux-manifest-${i}`),
+        copyImageIndex: true,
+        archImageTags: {
+          amd64: `amazonlinux-amd64-${i}`,
+          arm64: `amazonlinux-arm64-${i}`,
+        },
+        retryConfigs: {
+          numAttempts: 5,
+          baseDelay: 1,
+          maxDelay: 30,
+        },
+      });
+    }
+    
 
     // // Concurrent deployments to stress-test ECR rate limit retry logic
     // for (let i = 0; i < 2; i++) {
