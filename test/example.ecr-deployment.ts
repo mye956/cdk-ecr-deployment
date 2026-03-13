@@ -61,25 +61,25 @@ class TestECRDeployment extends Stack {
       });
     }
     
-    new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndexBusybox', {
-      src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
-      dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-manifest`),
-      copyImageIndex: true,
-      archImageTags: {
-        amd64: `busybox-amd64`,
-        arm64: `busybox-arm64`,
-      },
-    });
-
-    // new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndexAmazonlinux', {
-    //   src: new ecrDeploy.DockerImageName('public.ecr.aws/amazonlinux/amazonlinux:latest'),
-    //   dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:amazonlinux-manifest`),
+    // new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndexBusybox', {
+    //   src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
+    //   dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-manifest`),
     //   copyImageIndex: true,
     //   archImageTags: {
-    //     amd64: `amazonlinux-amd64`,
-    //     arm64: `amazonlinux-arm64`,
+    //     amd64: `busybox-amd64`,
+    //     arm64: `busybox-arm64`,
     //   },
     // });
+
+    new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndexAmazonlinux', {
+      src: new ecrDeploy.DockerImageName('public.ecr.aws/amazonlinux/amazonlinux:latest'),
+      dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:amazonlinux-manifest`),
+      copyImageIndex: true,
+      archImageTags: {
+        amd64: `amazonlinux-amd64`,
+        arm64: `amazonlinux-arm64`,
+      },
+    });
 
     // // Concurrent deployments to stress-test ECR rate limit retry logic
     // for (let i = 0; i < 2; i++) {
