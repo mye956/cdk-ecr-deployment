@@ -277,10 +277,6 @@ func IsECRRateLimit(err error) bool {
 
 	s := strings.ToLower(err.Error())
 	log.Printf("Potential rate limit error: %v", s)
-	if strings.Contains(s, "rate") && strings.Contains(s, "exceed") {
-		log.Printf("match 1")
-		return true
-	}
 
 	if strings.Contains(s, "toomanyrequests") {
 		log.Printf("match 2")
@@ -297,8 +293,8 @@ func IsECRRateLimit(err error) bool {
 		return true
 	}
 
-	if strings.Contains(s, "throttl") {
-		log.Printf("match 5")
+	if strings.Contains(s, "rate") && strings.Contains(s, "exceed") {
+		log.Printf("match 1")
 		return true
 	}
 
