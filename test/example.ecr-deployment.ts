@@ -43,21 +43,24 @@ class TestECRDeployment extends Stack {
       imageArch: ['arm64'],
     });
 
-    // Test copying a multi-arch image index
-    new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndex', {
-      src: new ecrDeploy.DockerImageName('public.ecr.aws/nginx/nginx:latest'),
-      dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:nginx-manifest`),
-      copyImageIndex: true,
-      archImageTags: {
-        amd64: 'nginx-amd64',
-        arm64: 'nginx-arm64',
-      },
-      retryConfigs: {
-        numAttempts: 5,
-        baseDelay: 1,
-        maxDelay: 30,
-      },
-    });
+    for (let i = 0; i < 2; i++) {
+      // Test copying a multi-arch image index
+      new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndex', {
+        src: new ecrDeploy.DockerImageName('public.ecr.aws/nginx/nginx:latest'),
+        dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:${i}-nginx-manifest`),
+        copyImageIndex: true,
+        archImageTags: {
+          amd64: `${i}-nginx-amd64`,
+          arm64: `${i}-nginx-arm64`,
+        },
+        retryConfigs: {
+          numAttempts: 5,
+          baseDelay: 1,
+          maxDelay: 30,
+        },
+      });
+    }
+    
 
     // // Concurrent deployments to stress-test ECR rate limit retry logic
     // for (let i = 0; i < 2; i++) {
