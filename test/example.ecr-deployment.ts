@@ -45,7 +45,7 @@ class TestECRDeployment extends Stack {
 
     for (let i = 0; i < 2; i++) {
       // Test copying a multi-arch image index
-      new ecrDeploy.ECRDeployment(this, 'DeployECRImageIndex', {
+      new ecrDeploy.ECRDeployment(this, `DeployECRImageIndex${i}`, {
         src: new ecrDeploy.DockerImageName('public.ecr.aws/nginx/nginx:latest'),
         dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:${i}-nginx-manifest`),
         copyImageIndex: true,
