@@ -52,6 +52,11 @@ class TestECRDeployment extends Stack {
         amd64: 'nginx-amd64',
         arm64: 'nginx-arm64',
       },
+      retryConfigs: {
+        numAttempts: 5,
+        baseDelay: 1,
+        maxDelay: 30,
+      },
     });
 
     // // Concurrent deployments to stress-test ECR rate limit retry logic
@@ -72,20 +77,20 @@ class TestECRDeployment extends Stack {
     //   });
     // }
 
-    new ecrDeploy.ECRDeployment(this, `DeployRetryTest`, {
-      src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
-      dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-manifest-retry`),
-      copyImageIndex: true,
-      archImageTags: {
-        amd64: `busybox-amd64`,
-        arm64: `busybox-arm64`,
-      },
-      retryConfigs: {
-        numAttempts: 5,
-        baseDelay: 1,
-        maxDelay: 30,
-      },
-    });
+    // new ecrDeploy.ECRDeployment(this, `DeployRetryTest`, {
+    //   src: new ecrDeploy.DockerImageName('public.ecr.aws/docker/library/busybox:latest'),
+    //   dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:busybox-manifest-retry`),
+    //   copyImageIndex: true,
+    //   archImageTags: {
+    //     amd64: `busybox-amd64`,
+    //     arm64: `busybox-arm64`,
+    //   },
+    //   retryConfigs: {
+    //     numAttempts: 5,
+    //     baseDelay: 1,
+    //     maxDelay: 30,
+    //   },
+    // });
 
     // Your can also copy a docker archive image tarball from s3
     // new ecrDeploy.ECRDeployment(this, 'DeployDockerImage', {
