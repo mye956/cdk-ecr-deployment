@@ -275,30 +275,9 @@ func IsECRRateLimit(err error) bool {
 		}
 	}
 
+	// Fallback to string matching
 	s := strings.ToLower(err.Error())
-	log.Printf("Potential rate limit error: %v", s)
-
-	if strings.Contains(s, "toomanyrequests") {
-		log.Printf("match 2")
-		return true
-	}
-
-	if strings.Contains(s, "ratelimitexceeded") {
-		log.Printf("match 3")
-		return true
-	}
-
-	if strings.Contains(s, "rate exceeded") {
-		log.Printf("match 4")
-		return true
-	}
-
-	if strings.Contains(s, "rate") && strings.Contains(s, "exceed") {
-		log.Printf("match 1")
-		return true
-	}
-
-	return false
+	return strings.Contains(s, "toomanyrequests") || strings.Contains(s, "ratelimitexceeded") || strings.Contains(s, "rate exceeded") || (strings.Contains(s, "rate") && strings.Contains(s, "exceed"))
 }
 
 func backoffWithJitter(attempt int, baseSeconds float64, capSeconds float64) time.Duration {
