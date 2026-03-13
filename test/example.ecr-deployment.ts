@@ -71,7 +71,7 @@ class TestECRDeployment extends Stack {
     //   },
     // });
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 10; i++) {
       new ecrDeploy.ECRDeployment(this, `DeployECRImageIndexAmazonlinux${i}`, {
         src: new ecrDeploy.DockerImageName('public.ecr.aws/amazonlinux/amazonlinux:latest'),
         dest: new ecrDeploy.DockerImageName(`${repo.repositoryUri}:amazonlinux-manifest-${i}`),
